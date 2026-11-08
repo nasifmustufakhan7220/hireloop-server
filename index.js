@@ -36,6 +36,12 @@ app.get('/', (req, res) => {
 app.get('/users', async(req,res)=>{
     const result = await users.find({}).toArray();
     res.send(result);
+});
+
+app.post('/jobs', async(req,res)=>{
+  const job = req.body;
+  const result = await jobs.insertOne(job);
+  res.send(result); 
 })
 
 app.listen(port, () => {
