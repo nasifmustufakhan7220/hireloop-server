@@ -1,4 +1,4 @@
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 import express from "express";
 import "dotenv/config";
 import cors from "cors"
@@ -47,6 +47,12 @@ app.post('/jobs', async(req,res)=>{
   const job = req.body;
   const result = await jobs.insertOne(job);
   res.send(result); 
+});
+
+app.delete("/jobs/:id", async(req,res)=>{
+  const {id} = req.params;
+  const result = await jobs.deleteOne({_id: new ObjectId(id)});
+  res.send(result);
 })
 
 app.listen(port, () => {
