@@ -38,6 +38,11 @@ app.get('/users', async(req,res)=>{
     res.send(result);
 });
 
+app.get('/jobs', async (req,res)=>{
+  const result = await jobs.find({}).toArray();
+  res.send(result);
+})
+
 app.post('/jobs', async(req,res)=>{
   const job = req.body;
   const result = await jobs.insertOne(job);
