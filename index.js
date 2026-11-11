@@ -53,6 +53,13 @@ app.delete("/jobs/:id", async(req,res)=>{
   const {id} = req.params;
   const result = await jobs.deleteOne({_id: new ObjectId(id)});
   res.send(result);
+});
+
+app.patch("/jobs/:id", async(req,res)=>{
+  const id = new ObjectId(req.params.id);
+  const updateJob = req.body;
+  const result = await jobs.updateOne({_id: id}, {$set: updateJob});
+  res.send(result);
 })
 
 app.listen(port, () => {
