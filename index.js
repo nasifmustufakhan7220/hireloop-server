@@ -39,7 +39,32 @@ app.get('/users', async(req,res)=>{
 });
 
 app.get('/jobs', async (req,res)=>{
-  const result = await jobs.find({}).toArray();
+  const query = {};
+  if(req.query){
+    if(req.query.jobType){
+      query.jobType = req.query.jobType;
+    }
+
+    if(req.query.remoteWork){
+      query.remoteWork = req.query.remoteWork === 'true';
+    }
+
+    if(req.query.jobCategory){
+      query.jobCategory = req.query.jobCategory;
+    }
+
+    if(req.query.search){
+      query.$or=[
+        {title: {$regex: req.query.search, $options: 'i'}},
+        {responsibilities: {$regex: req.query.search, $options: 'i'}},
+        {qualifications: {$regex: req.query.search, $options: 'i'}},
+        {jobCategory: {$regex: req.query.search, $options: 'i'}},
+        {companyName: {$regex: req.query.search, $options: 'i'}}
+      ]
+    }
+
+  }
+  const result = await jobs.find(query).toArray();
   res.send(result);
 })
 
