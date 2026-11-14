@@ -28,6 +28,7 @@ const connectMongoClient = await connectToMongoDB();
 const db = connectMongoClient.db("hireloopDB");
 const users = db.collection("user");
 const jobs = db.collection("jobs");
+const applications = db.collection("applications");
 
 app.get('/', (req, res) => {
   res.send('Hello World!');
@@ -96,6 +97,13 @@ app.patch("/jobs/:id", async(req,res)=>{
 
 
 
+
+// application apis
+app.post('/applications', async(req,res)=>{
+  const applicationData = req.body;
+  const result = await applications.insertOne(applicationData);
+  res.send(result);
+})
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
