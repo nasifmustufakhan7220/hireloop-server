@@ -38,6 +38,8 @@ app.get('/users', async(req,res)=>{
     res.send(result);
 });
 
+
+
 app.get('/jobs', async (req,res)=>{
   const query = {};
   if(req.query){
@@ -74,6 +76,11 @@ app.post('/jobs', async(req,res)=>{
   res.send(result); 
 });
 
+app.get('/jobs/:id', async(req,res)=>{
+  const id = req.params.id;
+  const result = await jobs.findOne({_id: new ObjectId(id)});
+  res.send(result);
+})
 app.delete("/jobs/:id", async(req,res)=>{
   const {id} = req.params;
   const result = await jobs.deleteOne({_id: new ObjectId(id)});
@@ -85,7 +92,10 @@ app.patch("/jobs/:id", async(req,res)=>{
   const updateJob = req.body;
   const result = await jobs.updateOne({_id: id}, {$set: updateJob});
   res.send(result);
-})
+});
+
+
+
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
