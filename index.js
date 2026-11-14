@@ -99,11 +99,20 @@ app.patch("/jobs/:id", async(req,res)=>{
 
 
 // application apis
+app.get('/applications', async(req,res)=>{
+  const query = {};
+  if(req.query.applicantId){
+    query.applicantId = req.query.applicantId;
+  }
+  const result = await applications.find(query).toArray();
+  res.send(result);
+});
+
 app.post('/applications', async(req,res)=>{
   const applicationData = req.body;
   const result = await applications.insertOne(applicationData);
   res.send(result);
-})
+});
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
