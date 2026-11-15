@@ -1,7 +1,9 @@
 import { MongoClient, ObjectId } from 'mongodb';
 import express from "express";
 import "dotenv/config";
-import cors from "cors"
+import cors from "cors";
+import  Stripe  from "stripe";
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const app = express();
 const port = 5000;
 
@@ -29,15 +31,23 @@ const db = connectMongoClient.db("hireloopDB");
 const users = db.collection("user");
 const jobs = db.collection("jobs");
 const applications = db.collection("applications");
+const payments = db.collection("payments");
 
 app.get('/', (req, res) => {
   res.send('Hello World!');
 });
-
+//users api
 app.get('/users', async(req,res)=>{
     const result = await users.find({}).toArray();
     res.send(result);
 });
+
+app.get('/users/:id/premium', async(req,res)=>{
+  const id = req.params.id;
+  const query = {_id: new ObjectId(id)};
+  const result = await users.findOne(query, {projection: {premium: 1}});
+  res.send(result);
+})
 
 
 
@@ -108,11 +118,78 @@ app.get('/applications', async(req,res)=>{
   res.send(result);
 });
 
+app.get("/applications/count", async(req,res)=>{
+  const query = {};
+  if(req.query.applicantId){
+    query.applicantId = req.query.applicantId;
+  }
+
+  const result = await applications.countDocuments(query);
+
+  res.send({count: result});
+})
+
 app.post('/applications', async(req,res)=>{
   const applicationData = req.body;
   const result = await applications.insertOne(applicationData);
   res.send(result);
 });
+
+
+//payments api
+
+app.post(`/payments/checkout-verify`, async(req,res)=>{
+  const {sessionId} = req.body;
+  if(!sessionId){
+    res.send({success: false, message: 'session Id is required'});
+  }
+  const {
+    status,
+    payment_status,
+    customer_email,
+    metadata,
+    payment_intent,
+    
+  } = await stripe.checkout.sessions.retrieve(sessionId);
+
+  if(status === "complete" && payment_status === "paid"){
+
+    const sessionQuery = {sessionId};
+
+    const exitingPayment = await payments.findOne(sessionQuery);
+
+    if(exitingPayment){
+      return res.send({success: false, message: 'Payment already verified'});
+    }
+
+    const payment = {
+      sessionId,
+      status,
+      payment_status,
+      customer_email,
+      userId:metadata.userId,
+      payment_intent,
+      payment_date: new Date()
+    }
+
+    const result = await payments.insertOne(payment);
+
+    const query = {_id: new ObjectId(metadata.userId)};
+
+    const updatedDoc = {
+      $set:{
+        premium: true,
+      }
+    }
+
+    const updatedResult = await users.updateOne(query, updatedDoc);
+
+    res.send({success: true, result, updatedResult});
+    return
+  }
+
+  res.send({success: false, message: 'Payment verification failed'});
+})
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
