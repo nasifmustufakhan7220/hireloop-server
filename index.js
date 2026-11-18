@@ -29,9 +29,41 @@ export async function connectToMongoDB() {
 const connectMongoClient = await connectToMongoDB();
 const db = connectMongoClient.db("hireloopDB");
 const users = db.collection("user");
+const sessions = db.collection("session");
 const jobs = db.collection("jobs");
 const applications = db.collection("applications");
 const payments = db.collection("payments");
+
+const verifyToken = async(req,res,next)=>{
+  const authHeader = req.headers.authorization;
+  if(!authHeader){
+    res.status(401).send({message: "Unathourized"});
+    return;
+  }
+  const token = authHeader.split(" ")[1];
+
+  if(!token){
+    res.status(401).send({message: "Unathourized"});
+    return
+  };
+
+
+  const session = await sessions.findOne({token});
+
+  if(!session){
+    res.status(401).send({message: "Unathourized"});
+    return
+  };
+
+  const user = await users.findOne({_id: new ObjectId(session.userId)});
+  if(!user){
+    res.status(401).send({message: "Unathourized"});
+    return
+  };
+
+  req.user = user;
+  next()
+}
 
 app.get('/', (req, res) => {
   res.send('Hello World!');
@@ -126,13 +158,19 @@ app.patch("/jobs/:id", async(req,res)=>{
 
 
 // application apis
-app.get('/applications', async(req,res)=>{
+app.get('/applications', verifyToken ,async(req,res)=>{
   const query = {};
   if(req.query.applicantId){
     query.applicantId = req.query.applicantId;
   }
 
   if(req.query.jobId){
+    const jobsQuery = await jobs.findOne({_id: new ObjectId(req.query.jobId)});
+
+    if(jobsQuery.recruiterId !== req.user._id.toString() && req.user.role !== "admin"){
+      res.status(403).send({message: "Forbidden"});
+      return
+    }
     query.jobId = req.query.jobId
   }
   const result = await applications.find(query).toArray();
