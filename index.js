@@ -49,6 +49,19 @@ app.get('/users/:id/premium', async(req,res)=>{
   res.send(result);
 })
 
+app.patch('/users/:id/role', async(req,res)=>{
+  const id = req.params.id;
+  const query = {_id: new ObjectId(id)};
+  const updateRole = {
+    $set:{
+      role: req.body.role
+    }
+  }
+
+  const result = await users.updateOne(query, updateRole);
+  res.send(result);
+})
+
 
 
 app.get('/jobs', async (req,res)=>{
@@ -64,6 +77,10 @@ app.get('/jobs', async (req,res)=>{
 
     if(req.query.jobCategory){
       query.jobCategory = req.query.jobCategory;
+    }
+
+    if(req.query.recruiterId){
+      query.recruiterId = req.query.recruiterId
     }
 
     if(req.query.search){
@@ -114,12 +131,17 @@ app.get('/applications', async(req,res)=>{
   if(req.query.applicantId){
     query.applicantId = req.query.applicantId;
   }
+
+  if(req.query.jobId){
+    query.jobId = req.query.jobId
+  }
   const result = await applications.find(query).toArray();
   res.send(result);
 });
 
 app.get("/applications/count", async(req,res)=>{
   const query = {};
+
   if(req.query.applicantId){
     query.applicantId = req.query.applicantId;
   }
@@ -127,6 +149,14 @@ app.get("/applications/count", async(req,res)=>{
   const result = await applications.countDocuments(query);
 
   res.send({count: result});
+})
+
+app.patch(`/applications/:id`, async(req,res)=>{
+  const id = req.params.id;
+  const query = {_id: new ObjectId(id)};
+  const updateStatus = req.body;
+  const result = await applications.updateOne(query, {$set:updateStatus});
+  res.send(result);
 })
 
 app.post('/applications', async(req,res)=>{
